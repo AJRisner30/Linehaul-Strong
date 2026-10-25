@@ -171,7 +171,11 @@ export const TacticalPaywallCard: React.FC<TacticalPaywallCardProps> = ({
               {details.description}
             </p>
             <p className="text-xs text-amber-300/90 font-tactical font-bold">
-              ⚡ This feature is strictly locked on the 14-Day Free Trial and $15 Starter tier. Unlock immediate access with Road Warrior Pro ($30/mo) or Carrier Fleet rate.
+              {feature === 'custom-plan'
+                ? '⚡ 1-on-1 Coach AJ custom programming is personally authored for Road Warrior Pro ($30/mo) members. Drivers on the 14-Day Free Trial or Starter tier can train with the Road Warrior gym split or In-Cab protocols.'
+                : currentTier === 'starter'
+                ? '⚡ The $15 Starter tier is focused on In-Cab & Rest-Stop protocols. Upgrade to Road Warrior Pro ($30/mo) to unlock commercial gym splits and verified 53\' semi parking GPS.'
+                : '⚡ Your 14-Day Free Trial has expired. Upgrade to Road Warrior Pro ($30/mo) or renew your trial to access commercial gym splits and 53\' semi parking GPS.'}
             </p>
           </div>
 

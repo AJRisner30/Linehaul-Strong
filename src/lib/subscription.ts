@@ -20,22 +20,22 @@ export const SUBSCRIPTION_PACKAGES: SubscriptionPackage[] = [
     name: '14-Day Free Trial',
     priceDisplay: '$0',
     billingPeriod: '14 Days Free',
-    badge: '14 DAYS FREE • CORE',
-    tagline: 'Experience the full core in-cab and rig-side tactical fitness system with zero commitment',
-    description: 'Get immediate 14-day free access to the Rest Stop 4-Day Split, Light DB In-Cab, Dock Door Drills, Nutrition, Sleep Recovery, and Hydration systems.',
+    badge: '14 DAYS FREE • ALL ACCESS',
+    tagline: 'Experience the full tactical training system with full test-drive of road & gym protocols',
+    description: 'Get immediate 14-day free access to test drive the Road Warrior 3-Day Gym Split, Gyms & 53\' Truck Parking GPS, Rest Stop Split, Light DB In-Cab, Dock Drills, and Cab-Galley nutrition.',
     highlighted: false,
     ctaText: 'Start 14-Day Free Trial',
     features: [
+      { name: 'Road Warrior 3-Day Gym Split', included: true, note: '14-Day Gym Test Drive' },
+      { name: 'Gyms & Truck Parking GPS (53\' lots)', included: true, note: '53\' Staging GPS Included' },
       { name: 'Rest Stop 4-Day Split Protocol', included: true, note: 'Tire & Grab Rail anchors' },
       { name: 'Light Dumbbell In-Cab Anywhere', included: true, note: 'Bunk & step routines' },
       { name: 'Dock Door Micro-Drills (5-10m)', included: true, note: 'Active staging timers' },
       { name: 'Cab-Galley Nutrition & Fuel Station Guide', included: true, note: '12V recipes & health grades' },
       { name: 'HOS Sleep Recovery & Vibration Tracking', included: true },
       { name: 'Hydration Stop Timing Calculator', included: true },
-      { name: 'Workout Logbook & Telemetry', included: true, note: 'Complete history' },
-      { name: 'Road Warrior 3-Day Gym Split', included: false, note: 'Requires Pro ($30)' },
-      { name: 'Gyms & Truck Parking GPS (53\' lots)', included: false, note: 'Requires Pro ($30)' },
-      { name: '1-on-1 Coach AJ Custom Rig Plan', included: false, note: 'Requires Pro ($30)' },
+      { name: 'Workout Logbook & Telemetry Export', included: true, note: 'Complete history' },
+      { name: '1-on-1 Coach AJ Custom Rig Plan', included: false, note: 'Requires Pro ($30) personal coach dispatch' },
     ]
   },
   {
@@ -156,13 +156,13 @@ export async function saveActiveMembership(
     if (driverId) {
       try {
         const driverRef = doc(db, 'drivers', driverId);
-        await updateDoc(driverRef, {
+        await setDoc(driverRef, {
           membershipTier: metadata.tier,
           trialStartDate: metadata.trialStartDate || null,
           trialExpiresDate: metadata.trialExpiresDate || null,
           subscriptionRenewsDate: metadata.renewsDate || null,
           updatedAt: new Date().toISOString()
-        });
+        }, { merge: true });
       } catch (firestoreError) {
         console.warn('Firestore subscription sync deferred (cached locally):', firestoreError);
       }
@@ -219,10 +219,22 @@ export function isFeatureUnlocked(
     return true;
   }
 
-  // Starter ($15) and 14-Day Free Trial unlock core in-cab / rest-stop routines,
-  // but strictly LOCK commercial gym splits, 53' semi parking gym GPS locator,
+  // 14-Day Free Trial unlocks the full tactical test-drive:
+  // - Road Warrior 3-Day Gym Split (Push/Pull/Legs)
+  // - Gyms & 53' Semi Parking GPS locator
+  // - Rest Stop Split, Light DB In-Cab, Dock Drills, Nutrition, Sleep, Hydration, Logbook
+  // Only bespoke 1-on-1 personal coach assignment (custom-plan) and direct priority coach dispatch requires paid Pro.
+  if (tier === 'trial') {
+    if (feature === 'custom-plan' || feature === 'coach-direct') {
+      return false; // Pro ($30) exclusive personal coaching assignment
+    }
+    return true; // Full test-drive of road, gym, and in-cab protocols unlocked
+  }
+
+  // Driver Starter ($15) unlocks core in-cab / rest-stop routines,
+  // but strictly locks commercial gym splits, 53' semi parking gym GPS locator,
   // and 1-on-1 coach AJ custom plan assignment (these require Road Warrior Pro).
-  if (tier === 'starter' || tier === 'trial') {
+  if (tier === 'starter') {
     if (
       feature === 'road-warrior' || 
       feature === 'hub-runner' || 

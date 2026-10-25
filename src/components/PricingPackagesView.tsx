@@ -105,7 +105,7 @@ export const PricingPackagesView: React.FC<PricingPackagesViewProps> = ({
     try {
       const updated = await activateFreeTrial(currentDriver?.id);
       onMembershipUpdated(updated);
-      showFeedback('14-Day Free Trial Activated! Core in-cab routines active; Pro features can be previewed or upgraded.');
+      showFeedback('14-Day Free Trial Activated! Full test-drive of Road Warrior gym split, 53\' parking GPS, and in-cab protocols unlocked.');
     } catch (e) {
       console.error(e);
     } finally {
@@ -119,7 +119,7 @@ export const PricingPackagesView: React.FC<PricingPackagesViewProps> = ({
       if (targetTier === 'trial') {
         const updated = await activateFreeTrial(currentDriver?.id);
         onMembershipUpdated(updated);
-        showFeedback('Simulated Tier: 14-Day Free Trial (Core in-cab routines active; Pro gym split, GPS, and custom coach locked).');
+        showFeedback('Simulated Tier: 14-Day Free Trial (Road Warrior gym split, 53\' parking GPS, and in-cab protocols active; 1-on-1 coach dispatch requires Pro).');
       } else if (targetTier === 'starter') {
         const updated = await activatePackage('starter', currentDriver?.id);
         onMembershipUpdated(updated);
@@ -484,27 +484,27 @@ export const PricingPackagesView: React.FC<PricingPackagesViewProps> = ({
                     <span>Contact Us for Fleet Pricing</span>
                   </button>
                 ) : isTrial ? (
-                  <button
-                    onClick={handleActivateTrial}
-                    disabled={isCurrent && !trialInfo.isExpired}
-                    className={`w-full py-3 px-4 rounded-xl text-xs font-tactical font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
-                      isCurrent && !trialInfo.isExpired
-                        ? 'bg-emerald-950/70 text-emerald-300 border border-emerald-700/60 cursor-default'
-                        : 'bg-[#1C2636] hover:bg-[#26354B] text-white border border-[#374760]'
-                    }`}
-                  >
+                  <div className="space-y-2 w-full">
                     {isCurrent && !trialInfo.isExpired ? (
-                      <>
+                      <button
+                        onClick={() => onNavigateToWorkout('road-warrior')}
+                        className="w-full py-3 px-4 rounded-xl text-xs font-tactical font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 bg-emerald-950/70 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-600/70 shadow-lg cursor-pointer"
+                        title="Click to launch the Road Warrior Gym Split"
+                      >
                         <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                        <span>Trial Active ({trialInfo.displayText})</span>
-                      </>
+                        <span>Trial Active ({trialInfo.displayText}) • Test Drive →</span>
+                      </button>
                     ) : (
-                      <>
-                        <Zap className="w-4 h-4 text-emerald-400" />
+                      <button
+                        onClick={handleActivateTrial}
+                        disabled={isProcessing}
+                        className="w-full py-3 px-4 rounded-xl text-xs font-tactical font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 bg-[#FF6B00] hover:bg-[#FF8526] text-[#0A0D12] shadow-lg shadow-[#FF6B00]/25 cursor-pointer font-black"
+                      >
+                        <Zap className="w-4 h-4 fill-current" />
                         <span>Start 14-Day Free Trial</span>
-                      </>
+                      </button>
                     )}
-                  </button>
+                  </div>
                 ) : (
                   <button
                     onClick={() => setSelectedPlanForCheckout(pkg.id as 'starter' | 'pro')}
@@ -586,10 +586,10 @@ export const PricingPackagesView: React.FC<PricingPackagesViewProps> = ({
               </tr>
               <tr>
                 <td className="py-3 px-4 font-bold text-white">Road Warrior 3-Day Gym Split (Push/Pull/Legs)</td>
-                <td className="py-3 px-4 text-center text-rose-500 font-bold">
+                <td className="py-3 px-4 text-center text-emerald-400 font-bold">
                   <div className="flex flex-col items-center">
-                    <X className="w-4 h-4 mx-auto" />
-                    <span className="text-[9px] text-slate-500 font-tactical font-normal">Requires Pro</span>
+                    <Check className="w-4 h-4 mx-auto" />
+                    <span className="text-[9px] text-emerald-400 font-tactical font-normal">14D Test Drive</span>
                   </div>
                 </td>
                 <td className="py-3 px-4 text-center text-rose-500 font-bold">
@@ -603,10 +603,10 @@ export const PricingPackagesView: React.FC<PricingPackagesViewProps> = ({
               </tr>
               <tr>
                 <td className="py-3 px-4 font-bold text-white">Gyms with 53' Semi Parking GPS (Planet Fitness)</td>
-                <td className="py-3 px-4 text-center text-rose-500 font-bold">
+                <td className="py-3 px-4 text-center text-emerald-400 font-bold">
                   <div className="flex flex-col items-center">
-                    <X className="w-4 h-4 mx-auto" />
-                    <span className="text-[9px] text-slate-500 font-tactical font-normal">Requires Pro</span>
+                    <Check className="w-4 h-4 mx-auto" />
+                    <span className="text-[9px] text-emerald-400 font-tactical font-normal">14D Test Drive</span>
                   </div>
                 </td>
                 <td className="py-3 px-4 text-center text-rose-500 font-bold">

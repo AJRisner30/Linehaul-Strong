@@ -19,8 +19,9 @@ import {
   deleteDoc
 } from 'firebase/firestore';
 import { auth, db } from './firebase';
-import { DriverAccount, WorkoutLogEntry, UserRole } from '../types';
+import { DriverAccount, WorkoutLogEntry, UserRole, MembershipTier } from '../types';
 import { isAdminUser, isCoachUser, getUserRole, COACH_EMAIL, ADMIN_EMAILS } from './coaching';
+import { saveActiveMembership, activateFreeTrial, MembershipMetadata } from './subscription';
 
 const ACCOUNTS_STORAGE_KEY = 'linehaul_accounts_registry_v1';
 const ACTIVE_SESSION_KEY = 'linehaul_active_session_driver_id';
@@ -108,6 +109,9 @@ export async function createDriverAccount(data: {
     await updateProfile(user, { displayName: cleanName });
 
     // 3. Create driver profile record
+    const trialStartDate = new Date().toISOString();
+    const trialExpiresDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+
     const safeDriver: Omit<DriverAccount, 'passwordHash'> = {
       id: user.uid,
       email: cleanEmail,
@@ -116,7 +120,8 @@ export async function createDriverAccount(data: {
       carrier: data.carrier?.trim() || undefined,
       role: getUserRole(cleanEmail),
       createdAt: new Date().toISOString(),
-      totalWorkoutsCompleted: 0
+      totalWorkoutsCompleted: 0,
+      membershipTier: 'trial'
     };
 
     // 4. Save to Firestore private document (/drivers/{uid})
@@ -129,17 +134,21 @@ export async function createDriverAccount(data: {
         callsign: data.callsign?.trim() || null,
         carrier: data.carrier?.trim() || null,
         role: getUserRole(cleanEmail),
+        membershipTier: 'trial',
+        trialStartDate,
+        trialExpiresDate,
         createdAt: new Date().toISOString(),
         totalWorkoutsCompleted: 0,
         updatedAt: new Date().toISOString()
-      });
+      }, { merge: true });
     } catch (firestoreError) {
       console.warn('Firestore driver doc creation cached locally:', firestoreError);
     }
 
-    // 5. Update local cache
+    // 5. Update local cache and activate 14-day trial
     setCachedDriver(safeDriver);
     localStorage.setItem(`linehaul_driver_${user.uid}_logs`, JSON.stringify([]));
+    await activateFreeTrial(user.uid);
 
     return { success: true, driver: safeDriver };
   } catch (err: any) {
@@ -199,8 +208,26 @@ export async function loginDriver(
           carrier: data.carrier || undefined,
           role: getUserRole(data.email || user.email || cleanEmail),
           createdAt: data.createdAt || new Date().toISOString(),
-          totalWorkoutsCompleted: data.totalWorkoutsCompleted || 0
+          totalWorkoutsCompleted: data.totalWorkoutsCompleted || 0,
+          membershipTier: data.membershipTier || undefined
         };
+
+        // Sync membership tier and trial dates to local storage
+        if (data.membershipTier) {
+          const membershipMeta: MembershipMetadata = {
+            tier: data.membershipTier as MembershipTier,
+            trialStartDate: data.trialStartDate || undefined,
+            trialExpiresDate: data.trialExpiresDate || undefined,
+            subscriptionStartDate: data.subscriptionStartDate || undefined,
+            renewsDate: data.subscriptionRenewsDate || undefined
+          };
+          await saveActiveMembership(membershipMeta, user.uid);
+        } else {
+          // Initialize active 14-day free trial for driver
+          await activateFreeTrial(user.uid);
+        }
+      } else {
+        await activateFreeTrial(user.uid);
       }
     } catch (e) {
       console.warn('Could not reach Firestore online, using local cache:', e);
@@ -449,8 +476,19 @@ export function subscribeToAuthState(
             carrier: data.carrier || undefined,
             role: getUserRole(data.email || user.email || driverProfile.email),
             createdAt: data.createdAt || driverProfile.createdAt,
-            totalWorkoutsCompleted: data.totalWorkoutsCompleted || 0
+            totalWorkoutsCompleted: data.totalWorkoutsCompleted || 0,
+            membershipTier: data.membershipTier || undefined
           };
+
+          if (data.membershipTier) {
+            saveActiveMembership({
+              tier: data.membershipTier as MembershipTier,
+              trialStartDate: data.trialStartDate || undefined,
+              trialExpiresDate: data.trialExpiresDate || undefined,
+              subscriptionStartDate: data.subscriptionStartDate || undefined,
+              renewsDate: data.subscriptionRenewsDate || undefined
+            }, user.uid);
+          }
         } else {
           driverProfile.role = getUserRole(driverProfile.email);
         }

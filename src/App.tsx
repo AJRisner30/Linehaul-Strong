@@ -569,6 +569,7 @@ export default function App() {
       <AndroidAppHubModal
         isOpen={isAndroidHubOpen}
         onClose={() => setIsAndroidHubOpen(false)}
+        currentDriver={currentDriver}
       />
     </div>
   );
