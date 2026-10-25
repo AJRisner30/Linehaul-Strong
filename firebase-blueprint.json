@@ -1,0 +1,249 @@
+{
+  "entities": {
+    "Driver": {
+      "title": "Driver",
+      "description": "Commercial truck driver profile and operational metrics",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Driver document ID matching auth UID"
+        },
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Driver email address"
+        },
+        "name": {
+          "type": "string",
+          "description": "Driver full name or preferred handle"
+        },
+        "callsign": {
+          "type": "string",
+          "description": "CB Radio handle or road callsign"
+        },
+        "carrier": {
+          "type": "string",
+          "description": "Fleet carrier or independent authority"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when driver registered"
+        },
+        "totalWorkoutsCompleted": {
+          "type": "number",
+          "description": "Total completed workouts count"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of latest profile update"
+        }
+      },
+      "required": ["id", "uid", "email", "name", "createdAt", "totalWorkoutsCompleted"]
+    },
+    "WorkoutLog": {
+      "title": "WorkoutLog",
+      "description": "Individual road workout or run logged by the driver",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique workout log ID"
+        },
+        "driverId": {
+          "type": "string",
+          "description": "ID and UID of the driver who performed the workout"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the session was logged"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["rest-stop-protocol", "hub-runner-gps", "light-db", "dock-door-drill", "gym-workout"],
+          "description": "Category of road workout"
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the workout protocol or run"
+        },
+        "durationMinutes": {
+          "type": "number",
+          "description": "Session duration in minutes"
+        },
+        "caloriesBurned": {
+          "type": "number",
+          "description": "Estimated calories burned"
+        },
+        "distanceMiles": {
+          "type": "number",
+          "description": "Road mileage covered if running or walking"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Driver notes, weather, or RPE observations"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp"
+        }
+      },
+      "required": ["id", "driverId", "timestamp", "type", "title", "durationMinutes", "caloriesBurned"]
+    },
+    "CustomWorkoutPlan": {
+      "title": "CustomWorkoutPlan",
+      "description": "Personalized road workout plan uploaded by Coach AJ for an individual commercial driver",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique plan ID"
+        },
+        "driverId": {
+          "type": "string",
+          "description": "Target driver user ID"
+        },
+        "driverName": {
+          "type": "string",
+          "description": "Driver display name"
+        },
+        "driverEmail": {
+          "type": "string",
+          "format": "email",
+          "description": "Driver email address"
+        },
+        "planTitle": {
+          "type": "string",
+          "description": "Title of custom workout plan"
+        },
+        "planDescription": {
+          "type": "string",
+          "description": "Plan summary and road strategy"
+        },
+        "assignedBy": {
+          "type": "string",
+          "description": "Coach name who created plan"
+        },
+        "coachEmail": {
+          "type": "string",
+          "format": "email",
+          "description": "Coach email address"
+        },
+        "assignedDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Date plan was uploaded and assigned"
+        },
+        "updatedDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Date plan was last updated"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "archived", "draft"],
+          "description": "Lifecycle state of the custom plan"
+        },
+        "targetDaysPerWeek": {
+          "type": "number",
+          "description": "Recommended training frequency per week"
+        }
+      },
+      "required": ["id", "driverId", "planTitle", "assignedBy", "status", "assignedDate"]
+    },
+    "CoachingEnrollment": {
+      "title": "CoachingEnrollment",
+      "description": "Record of a signed-in driver enrolling in 1-on-1 coaching with Coach AJ",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Enrollment ID matching driver user ID"
+        },
+        "driverId": {
+          "type": "string",
+          "description": "Driver user ID"
+        },
+        "driverName": {
+          "type": "string",
+          "description": "Driver name"
+        },
+        "driverEmail": {
+          "type": "string",
+          "format": "email",
+          "description": "Driver email"
+        },
+        "callsign": {
+          "type": "string",
+          "description": "Driver CB callsign"
+        },
+        "carrier": {
+          "type": "string",
+          "description": "Carrier or authority"
+        },
+        "enrolledAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when driver signed up for coaching"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["enrolled", "plan-active", "completed", "paused"],
+          "description": "Driver coaching lifecycle state"
+        },
+        "rigType": {
+          "type": "string",
+          "description": "Rig division e.g. Hazmat Linehaul, Heavy Haul, OTR"
+        },
+        "gearAvailable": {
+          "type": "string",
+          "description": "Equipment stowed on the truck"
+        },
+        "shiftSchedule": {
+          "type": "string",
+          "description": "Driver hours and shift routine"
+        },
+        "painPointsOrInjuries": {
+          "type": "string",
+          "description": "Joint, posture, or physical concerns"
+        },
+        "primaryGoals": {
+          "type": "string",
+          "description": "Driver goals for 1-on-1 coaching"
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of latest status update"
+        }
+      },
+      "required": ["id", "driverId", "driverName", "driverEmail", "enrolledAt", "status", "rigType", "gearAvailable"]
+    }
+  },
+  "firestore": {
+    "/drivers/{driverId}": {
+      "schema": "Driver",
+      "description": "Private profile for authenticated commercial drivers"
+    },
+    "/drivers/{driverId}/workoutLogs/{logId}": {
+      "schema": "WorkoutLog",
+      "description": "Driver subcollection containing private workout and running logs"
+    },
+    "/drivers/{driverId}/customPlans/{planId}": {
+      "schema": "CustomWorkoutPlan",
+      "description": "Custom workout plans uploaded specifically for this driver"
+    },
+    "/coachingEnrollments/{driverId}": {
+      "schema": "CoachingEnrollment",
+      "description": "Coaching enrollment registry for drivers signed up with Coach AJ"
+    }
+  }
+}

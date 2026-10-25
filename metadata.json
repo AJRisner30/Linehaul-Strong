@@ -1,0 +1,6 @@
+{
+  "name": "Linehaul Strong",
+  "description": "Tactical fitness, truck-accessible gym GPS locator with nearby parking, and road training protocols built for commercial truck drivers by AJ Risner.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

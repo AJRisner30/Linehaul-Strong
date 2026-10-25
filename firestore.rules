@@ -1,0 +1,48 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isDriver(driverId) {
+      return isSignedIn() && request.auth.uid == driverId;
+    }
+    function isCoach() {
+      return isSignedIn() && (
+        request.auth.token.email == 'risneraryan@gmail.com' ||
+        request.auth.token.email == 'risnerathletics@gmail.com' ||
+        request.auth.uid == 'coach-aj-risner'
+      );
+    }
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Driver Profiles & subcollections
+    match /drivers/{driverId} {
+      allow read: if isDriver(driverId) || isCoach();
+      allow write: if isDriver(driverId) || isCoach();
+
+      // Driver workout logs
+      match /workoutLogs/{logId} {
+        allow read: if isDriver(driverId) || isCoach();
+        allow write: if isDriver(driverId) || isCoach();
+      }
+
+      // Custom workout plans uploaded by Coach AJ
+      match /customPlans/{planId} {
+        allow read: if isDriver(driverId) || isCoach();
+        allow write: if isCoach() || isDriver(driverId);
+      }
+    }
+
+    // Coaching enrollments
+    match /coachingEnrollments/{driverId} {
+      allow read: if isDriver(driverId) || isCoach();
+      allow create, update: if isDriver(driverId) || isCoach();
+      allow delete: if isCoach();
+    }
+  }
+}

@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --asphalt-950: #080A0C;
+    --asphalt-900: #0D0F12;
+    --asphalt-850: #12151B;
+    --asphalt-800: #181C23;
+    --asphalt-700: #222731;
+    --asphalt-600: #2F3644;
+    --hivis-orange: #FF6B00;
+    --hivis-amber: #FFA000;
+    --silver-reflective: #E2E8F0;
+    --silver-dim: #94A3B8;
+  }
+
+  body {
+    font-family: 'Barlow', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background-color: #0D0F12;
+    color: #E2E8F0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4, .font-heading {
+    font-family: 'Barlow Condensed', sans-serif;
+    letter-spacing: 0.025em;
+  }
+
+  .font-tactical {
+    font-family: 'Chakra Petch', monospace;
+  }
+}
+
+/* Custom Tactical Road Glows & Reflective accents */
+.badge-reflective {
+  background: linear-gradient(135deg, rgba(226, 232, 240, 0.15) 0%, rgba(148, 163, 184, 0.05) 100%);
+  border: 1px solid rgba(226, 232, 240, 0.25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.orange-border-glow {
+  border-color: #FF6B00;
+  box-shadow: 0 0 16px rgba(255, 107, 0, 0.25);
+}
+
+.orange-text-glow {
+  text-shadow: 0 0 12px rgba(255, 107, 0, 0.4);
+}
+
+/* Subtle tire tread hatch pattern for tactical cards */
+.tire-tread-pattern {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255, 107, 0, 0.03) 0px,
+    rgba(255, 107, 0, 0.03) 6px,
+    transparent 6px,
+    transparent 14px
+  );
+}
+
+/* Cross-browser scrollbar utilities */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.tactical-scrollbar::-webkit-scrollbar {
+  height: 4px;
+}
+.tactical-scrollbar::-webkit-scrollbar-track {
+  background: #0E1116;
+}
+.tactical-scrollbar::-webkit-scrollbar-thumb {
+  background: #2A3649;
+  border-radius: 9999px;
+}
+.tactical-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #FF6B00;
+}
+
+
