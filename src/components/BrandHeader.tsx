@@ -67,12 +67,19 @@ export const BrandHeader: React.FC<BrandHeaderProps> = ({
   onOpenAndroidHub
 }) => {
   const { isInstalled } = usePWAInstall();
-  const userTier = currentMembership?.tier || 'trial';
+  const userTier = currentMembership?.tier || 'none';
   const isAdmin = !!(currentDriver?.email && isAdminUser(currentDriver.email));
   const isCoach = !!(currentDriver?.email && isCoachUser(currentDriver.email));
+  const isRestStopLocked = !isFeatureUnlocked(userTier, 'rest-stop');
+  const isLightDbLocked = !isFeatureUnlocked(userTier, 'light-db');
   const isRoadWarriorLocked = !isFeatureUnlocked(userTier, 'road-warrior');
+  const isDockDrillsLocked = !isFeatureUnlocked(userTier, 'dock-drills');
   const isCustomPlanLocked = !isFeatureUnlocked(userTier, 'custom-plan');
   const isHubRunnerLocked = !isFeatureUnlocked(userTier, 'hub-runner');
+  const isNutritionLocked = !isFeatureUnlocked(userTier, 'nutrition');
+  const isHosRecoveryLocked = !isFeatureUnlocked(userTier, 'hos-recovery');
+  const isHydrationLocked = !isFeatureUnlocked(userTier, 'hydration');
+  const isLogbookLocked = !isFeatureUnlocked(userTier, 'telemetry-export');
 
   // Interactive horizontal sliding banner state & refs
   const navScrollRef = useRef<HTMLDivElement>(null);
@@ -318,9 +325,13 @@ export const BrandHeader: React.FC<BrandHeaderProps> = ({
               <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 border border-slate-700">
                 $15
               </span>
+            ) : currentMembership?.trialExpiresDate ? (
+              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-rose-950 text-rose-300 border border-rose-700/60 font-black animate-pulse">
+                TRIAL EXPIRED
+              </span>
             ) : (
-              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300">
-                FREE TRIAL
+              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-950 text-amber-300 border border-amber-700/60 font-bold">
+                ACTIVATE TRIAL
               </span>
             )}
           </button>
@@ -411,7 +422,14 @@ export const BrandHeader: React.FC<BrandHeaderProps> = ({
           >
             <Activity className="w-4 h-4 text-[#FF6B00]" />
             <span>Rest Stop Protocol</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#202733] text-slate-300 font-tactical">4-DAY</span>
+            {isRestStopLocked ? (
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-950/80 text-rose-400 border border-rose-600/60 font-tactical font-black flex items-center gap-1">
+                <Lock className="w-2.5 h-2.5" />
+                <span>LOCKED</span>
+              </span>
+            ) : (
+              <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#202733] text-slate-300 font-tactical">4-DAY</span>
+            )}
           </button>
 
           <button
@@ -425,7 +443,14 @@ export const BrandHeader: React.FC<BrandHeaderProps> = ({
           >
             <Dumbbell className="w-4 h-4 text-[#FF6B00]" />
             <span>Light DB Anywhere</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#202733] text-slate-300 font-tactical">BUNK/BOX</span>
+            {isLightDbLocked ? (
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-950/80 text-rose-400 border border-rose-600/60 font-tactical font-black flex items-center gap-1">
+                <Lock className="w-2.5 h-2.5" />
+                <span>LOCKED</span>
+              </span>
+            ) : (
+              <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#202733] text-slate-300 font-tactical">BUNK/BOX</span>
+            )}
           </button>
 
           <button
@@ -442,7 +467,7 @@ export const BrandHeader: React.FC<BrandHeaderProps> = ({
             {isRoadWarriorLocked ? (
               <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-950/80 text-amber-400 border border-amber-600/60 font-tactical font-black flex items-center gap-1">
                 <Lock className="w-2.5 h-2.5" />
-                <span>PRO</span>
+                <span>{userTier === 'none' ? 'LOCKED' : 'PRO'}</span>
               </span>
             ) : (
               <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-tactical font-black">
@@ -462,9 +487,16 @@ export const BrandHeader: React.FC<BrandHeaderProps> = ({
           >
             <Zap className="w-4 h-4 text-[#FF6B00]" />
             <span>Dock Door Drills</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#FF6B00]/20 text-[#FF6B00] font-tactical font-black">
-              5-10M MICRO
-            </span>
+            {isDockDrillsLocked ? (
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-950/80 text-rose-400 border border-rose-600/60 font-tactical font-black flex items-center gap-1">
+                <Lock className="w-2.5 h-2.5" />
+                <span>LOCKED</span>
+              </span>
+            ) : (
+              <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#FF6B00]/20 text-[#FF6B00] font-tactical font-black">
+                5-10M MICRO
+              </span>
+            )}
           </button>
 
           <button
@@ -555,7 +587,7 @@ export const BrandHeader: React.FC<BrandHeaderProps> = ({
             {isHubRunnerLocked ? (
               <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-950/80 text-amber-400 border border-amber-600/60 font-tactical font-black flex items-center gap-1">
                 <Lock className="w-2.5 h-2.5" />
-                <span>PRO</span>
+                <span>{userTier === 'none' ? 'LOCKED' : 'PRO'}</span>
               </span>
             ) : (
               <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 font-tactical font-black">
@@ -575,7 +607,14 @@ export const BrandHeader: React.FC<BrandHeaderProps> = ({
           >
             <Utensils className="w-4 h-4 text-[#FF6B00]" />
             <span>Cab-Galley & Fuel Grades</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 font-tactical">FOOD/12V</span>
+            {isNutritionLocked ? (
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-950/80 text-rose-400 border border-rose-600/60 font-tactical font-black flex items-center gap-1">
+                <Lock className="w-2.5 h-2.5" />
+                <span>LOCKED</span>
+              </span>
+            ) : (
+              <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 font-tactical">FOOD/12V</span>
+            )}
           </button>
 
           <button
@@ -589,7 +628,14 @@ export const BrandHeader: React.FC<BrandHeaderProps> = ({
           >
             <Bed className="w-4 h-4 text-[#FF6B00]" />
             <span>HOS Recovery</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded bg-sky-500/20 text-sky-400 font-tactical">SLEEP/REST</span>
+            {isHosRecoveryLocked ? (
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-950/80 text-rose-400 border border-rose-600/60 font-tactical font-black flex items-center gap-1">
+                <Lock className="w-2.5 h-2.5" />
+                <span>LOCKED</span>
+              </span>
+            ) : (
+              <span className="text-[10px] px-1.5 py-0.2 rounded bg-sky-500/20 text-sky-400 font-tactical">SLEEP/REST</span>
+            )}
           </button>
 
           <button
@@ -603,7 +649,14 @@ export const BrandHeader: React.FC<BrandHeaderProps> = ({
           >
             <Droplet className="w-4 h-4 text-sky-400" />
             <span>Hydration & Stops</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#202733] text-slate-300 font-tactical">FLUID TIMING</span>
+            {isHydrationLocked ? (
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-950/80 text-rose-400 border border-rose-600/60 font-tactical font-black flex items-center gap-1">
+                <Lock className="w-2.5 h-2.5" />
+                <span>LOCKED</span>
+              </span>
+            ) : (
+              <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#202733] text-slate-300 font-tactical">FLUID TIMING</span>
+            )}
           </button>
 
           <button
@@ -617,7 +670,14 @@ export const BrandHeader: React.FC<BrandHeaderProps> = ({
           >
             <ClipboardList className="w-4 h-4 text-[#FF6B00]" />
             <span>Workout Logbook</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#202733] text-slate-300 font-tactical">LOGS</span>
+            {isLogbookLocked ? (
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-950/80 text-rose-400 border border-rose-600/60 font-tactical font-black flex items-center gap-1">
+                <Lock className="w-2.5 h-2.5" />
+                <span>LOCKED</span>
+              </span>
+            ) : (
+              <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#202733] text-slate-300 font-tactical">LOGS</span>
+            )}
           </button>
 
           {/* Admin Command Center Navigation Tab - Strictly visible to Admin risneraryan@gmail.com */}

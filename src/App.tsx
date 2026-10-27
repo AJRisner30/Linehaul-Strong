@@ -39,27 +39,50 @@ import {
   getActiveMembership, 
   saveActiveMembership, 
   MembershipMetadata, 
-  isFeatureUnlocked 
+  isFeatureUnlocked,
+  getTrialTimeRemaining
 } from './lib/subscription';
 import { TrainingDay, WorkoutLogEntry, DriverAccount } from './types';
 import { isCoachUser, isAdminUser } from './lib/coaching';
 import { checkAndTriggerDueReminder } from './lib/notifications';
-import { ShieldCheck, Truck, Award, Mail, Dumbbell, Zap, Utensils, Bed, Droplet, UserPlus, LogIn, Download, Tag, Lock, Smartphone } from 'lucide-react';
+import { ShieldCheck, Truck, Award, Mail, Dumbbell, Zap, Utensils, Bed, Droplet, UserPlus, LogIn, Download, Tag, Lock, Smartphone, ArrowRight } from 'lucide-react';
+import { ActivateTrialOnboardingScreen } from './components/ActivateTrialOnboardingScreen';
 
 export default function App() {
   const { isInstalled } = usePWAInstall();
-  const [activeTab, setActiveTab] = useState<ActiveNavTab>('rest-stop');
+
+  // Active Membership State (14-Day Free Trial, $15 Starter, $30 Pro, Fleet)
+  const [currentDriver, setCurrentDriver] = useState<Omit<DriverAccount, 'passwordHash'> | null>(() => getCurrentDriver());
+  const [membership, setMembership] = useState<MembershipMetadata>(() => {
+    const driver = getCurrentDriver();
+    return getActiveMembership(driver?.id);
+  });
+
+  // Direct visitor to Activate Free Trial & Sign Up screen as soon as they visit the app:
+  // "As soon as someone visits the app direct them to an activate free trial and sign up screen."
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(() => {
+    const driver = getCurrentDriver();
+    const meta = getActiveMembership(driver?.id);
+    if (!driver && meta.tier === 'none' && !meta.trialExpiresDate) {
+      return true;
+    }
+    return false;
+  });
+
+  // If trial has ended, direct driver to subscription packages tab:
+  const [activeTab, setActiveTab] = useState<ActiveNavTab>(() => {
+    const driver = getCurrentDriver();
+    const meta = getActiveMembership(driver?.id);
+    if (meta.tier === 'none' && meta.trialExpiresDate) {
+      return 'pricing';
+    }
+    return 'rest-stop';
+  });
+
   const [activeWorkoutDay, setActiveWorkoutDay] = useState<TrainingDay | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isAndroidHubOpen, setIsAndroidHubOpen] = useState(false);
   const [isOnline, setIsOnline] = useState<boolean>(() => typeof navigator !== 'undefined' ? navigator.onLine : true);
-
-  // Driver Authentication & Isolated Vault State
-  const [currentDriver, setCurrentDriver] = useState<Omit<DriverAccount, 'passwordHash'> | null>(() => getCurrentDriver());
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-
-  // Active Membership State (14-Day Free Trial, $15 Starter, $30 Pro, Fleet)
-  const [membership, setMembership] = useState<MembershipMetadata>(() => getActiveMembership(currentDriver?.id));
 
   // Load driver's isolated workout logs (starts clean and fresh for new drivers)
   const [workoutLogs, setWorkoutLogs] = useState<WorkoutLogEntry[]>(() => {
@@ -97,6 +120,26 @@ export default function App() {
       setMembership(getActiveMembership());
     }
   }, [currentDriver?.id]);
+
+  // Monitor trial expiration and lock everything when trial ends:
+  // "Once the free trial ends direct them to get a subscription and lock everything again"
+  useEffect(() => {
+    if (membership.trialExpiresDate && (membership.tier === 'trial' || membership.tier === 'none')) {
+      const remaining = getTrialTimeRemaining(membership.trialExpiresDate);
+      if (remaining.isExpired) {
+        if (membership.tier !== 'none') {
+          const expiredMeta: MembershipMetadata = {
+            ...membership,
+            tier: 'none'
+          };
+          setMembership(expiredMeta);
+          saveActiveMembership(expiredMeta, currentDriver?.id);
+          setActiveTab('pricing');
+          showToast('14-Day Free Trial has ended. Please choose a subscription to unlock your workouts.');
+        }
+      }
+    }
+  }, [membership.trialExpiresDate, membership.tier, currentDriver?.id]);
 
   // Background 24-Hour Training Consistency Check across all tabs
   useEffect(() => {
@@ -171,6 +214,9 @@ export default function App() {
   }, [isAndroidHubOpen, isAuthModalOpen, activeWorkoutDay, activeTab]);
 
   const handleTabChangeWithHistory = (newTab: ActiveNavTab) => {
+    if (membership.tier === 'none' && !isAdmin && ['rest-stop', 'light-db', 'road-warrior', 'dock-drills', 'custom-plan', 'hub-runner', 'nutrition', 'hos-recovery', 'hydration'].includes(newTab)) {
+      showToast('14-Day Free Trial ended. Select a subscription to unlock this protocol.');
+    }
     if (newTab !== activeTab) {
       if (typeof window !== 'undefined' && window.history) {
         window.history.pushState({ tab: newTab }, '');
@@ -225,6 +271,11 @@ export default function App() {
     showToast(`Welcome back, Driver ${driver.callsign || driver.name}!`);
   };
 
+  // As soon as someone visits the app, direct them to an activate free trial and sign up screen
+  if (!currentDriver) {
+    return <ActivateTrialOnboardingScreen onTrialActivated={handleAuthSuccess} />;
+  }
+
   return (
     <div className="min-h-screen bg-[#080A0C] text-[#E2E8F0] flex flex-col justify-between selection:bg-[#FF6B00] selection:text-[#0D0F12]">
       {/* Brand Header */}
@@ -276,57 +327,67 @@ export default function App() {
           </div>
         )}
 
-        {/* Isolated Driver Welcome Banner for Unauthenticated/New Drivers */}
-        {!currentDriver && (
-          <div className="bg-[#12161E] border-2 border-[#FF6B00]/40 rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        {/* Trial Expired Alert Banner - Directs drivers to select a subscription */}
+        {membership.tier === 'none' && !isAdmin && (
+          <div className="bg-gradient-to-r from-rose-950/90 via-[#161B24] to-rose-950/90 border-2 border-rose-500 rounded-2xl p-4 sm:p-5 shadow-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded bg-[#FF6B00] text-[#0A0D12] text-[10px] font-tactical font-black uppercase tracking-wider">
-                  DRIVER VAULT READY
+                <span className="px-2.5 py-0.5 rounded bg-rose-600 text-white text-[10px] font-tactical font-black uppercase tracking-wider flex items-center gap-1 shadow">
+                  <Lock className="w-3 h-3 stroke-[3]" />
+                  <span>14-DAY FREE TRIAL ENDED</span>
                 </span>
-                <span className="text-xs font-tactical text-slate-400">Strict Data Isolation</span>
+                <span className="text-xs font-tactical text-amber-300 font-bold">ALL PROTOCOLS LOCKED</span>
               </div>
-              <h3 className="text-base font-bold text-white font-heading uppercase">
-                Create Your Account & Start with a Fresh, Clean App
+              <h3 className="text-base sm:text-lg font-black text-white font-heading uppercase tracking-wide">
+                Subscribe to Unlock In-Cab Workouts, Gym Splits, & GPS Tools
               </h3>
-              <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
-                Every driver gets their own private, independent profile. Your workout logs, mileage, and credentials remain private and completely invisible to all other drivers.
+              <p className="text-xs text-slate-300 font-tactical max-w-2xl leading-relaxed">
+                Your 14-day free trial has completed. Choose between the <strong>$15/mo Driver Starter</strong> (core in-cab & rest-stop) or <strong>$30/mo Road Warrior Pro</strong> (commercial gym split, 53' semi parking GPS, and priority custom coach intake).
               </p>
             </div>
-            <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
-              <button
-                onClick={() => setIsAuthModalOpen(true)}
-                className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#FF6B00] hover:bg-[#FF8526] text-[#0A0D12] text-xs font-tactical font-black uppercase transition shadow-lg shadow-[#FF6B00]/20"
-              >
-                <UserPlus className="w-3.5 h-3.5" />
-                <span>Create Driver Account</span>
-              </button>
-              <button
-                onClick={() => setIsAuthModalOpen(true)}
-                className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#1A212D] hover:bg-[#252F3F] text-white border border-[#2F3C50] text-xs font-tactical font-bold uppercase transition"
-              >
-                <LogIn className="w-3.5 h-3.5 text-slate-400" />
-                <span>Sign In</span>
-              </button>
-            </div>
+            <button
+              onClick={() => handleTabChangeWithHistory('pricing')}
+              className="shrink-0 w-full sm:w-auto px-5 py-3 rounded-xl bg-[#FF6B00] hover:bg-[#FF8526] text-[#0A0D12] text-xs font-tactical font-black uppercase tracking-wider shadow-xl shadow-[#FF6B00]/30 transition flex items-center justify-center gap-2 active:scale-[0.98]"
+            >
+              <span>Get a Subscription ($15 / $30)</span>
+              <ArrowRight className="w-4 h-4 stroke-[3]" />
+            </button>
           </div>
         )}
 
         {activeTab === 'rest-stop' && (
-          <RestStopSplitView
-            onStartDayWorkout={(day) => setActiveWorkoutDay(day)}
-            loggedWorkouts={workoutLogs}
-            onSwitchToLightDb={() => setActiveTab('light-db')}
-            onContactCoach={() => setActiveTab('contact')}
-          />
+          isFeatureUnlocked(membership.tier, 'rest-stop') ? (
+            <RestStopSplitView
+              onStartDayWorkout={(day) => setActiveWorkoutDay(day)}
+              loggedWorkouts={workoutLogs}
+              onSwitchToLightDb={() => setActiveTab('light-db')}
+              onContactCoach={() => setActiveTab('contact')}
+            />
+          ) : (
+            <TacticalPaywallCard
+              feature="rest-stop"
+              currentTier={membership.tier}
+              onUpgradeToPro={() => setActiveTab('pricing')}
+              onNavigateToUnlocked={(tab) => setActiveTab(tab)}
+            />
+          )
         )}
 
         {activeTab === 'light-db' && (
-          <LightDbProgramView
-            onStartDayWorkout={(day) => setActiveWorkoutDay(day)}
-            loggedWorkouts={workoutLogs}
-            onContactCoach={() => setActiveTab('contact')}
-          />
+          isFeatureUnlocked(membership.tier, 'light-db') ? (
+            <LightDbProgramView
+              onStartDayWorkout={(day) => setActiveWorkoutDay(day)}
+              loggedWorkouts={workoutLogs}
+              onContactCoach={() => setActiveTab('contact')}
+            />
+          ) : (
+            <TacticalPaywallCard
+              feature="light-db"
+              currentTier={membership.tier}
+              onUpgradeToPro={() => setActiveTab('pricing')}
+              onNavigateToUnlocked={(tab) => setActiveTab(tab)}
+            />
+          )
         )}
 
         {activeTab === 'road-warrior' && (
@@ -348,10 +409,19 @@ export default function App() {
         )}
 
         {activeTab === 'dock-drills' && (
-          <DockDoorDrillsView
-            onLogWorkout={handleLogWorkout}
-            onContactCoach={() => setActiveTab('contact')}
-          />
+          isFeatureUnlocked(membership.tier, 'dock-drills') ? (
+            <DockDoorDrillsView
+              onLogWorkout={handleLogWorkout}
+              onContactCoach={() => setActiveTab('contact')}
+            />
+          ) : (
+            <TacticalPaywallCard
+              feature="dock-drills"
+              currentTier={membership.tier}
+              onUpgradeToPro={() => setActiveTab('pricing')}
+              onNavigateToUnlocked={(tab) => setActiveTab(tab)}
+            />
+          )
         )}
 
         {activeTab === 'custom-plan' && (
@@ -405,22 +475,49 @@ export default function App() {
         )}
 
         {activeTab === 'nutrition' && (
-          <CabGalleyNutritionView
-            onContactCoach={() => setActiveTab('contact')}
-          />
+          isFeatureUnlocked(membership.tier, 'nutrition') ? (
+            <CabGalleyNutritionView
+              onContactCoach={() => setActiveTab('contact')}
+            />
+          ) : (
+            <TacticalPaywallCard
+              feature="nutrition"
+              currentTier={membership.tier}
+              onUpgradeToPro={() => setActiveTab('pricing')}
+              onNavigateToUnlocked={(tab) => setActiveTab(tab)}
+            />
+          )
         )}
 
         {activeTab === 'hos-recovery' && (
-          <HosRecoveryView
-            onSelectProtocol={(p) => setActiveTab(p.includes('Light DB') ? 'light-db' : 'rest-stop')}
-            onContactCoach={() => setActiveTab('contact')}
-          />
+          isFeatureUnlocked(membership.tier, 'hos-recovery') ? (
+            <HosRecoveryView
+              onSelectProtocol={(p) => setActiveTab(p.includes('Light DB') ? 'light-db' : 'rest-stop')}
+              onContactCoach={() => setActiveTab('contact')}
+            />
+          ) : (
+            <TacticalPaywallCard
+              feature="hos-recovery"
+              currentTier={membership.tier}
+              onUpgradeToPro={() => setActiveTab('pricing')}
+              onNavigateToUnlocked={(tab) => setActiveTab(tab)}
+            />
+          )
         )}
 
         {activeTab === 'hydration' && (
-          <HydrationStrategyView
-            onContactCoach={() => setActiveTab('contact')}
-          />
+          isFeatureUnlocked(membership.tier, 'hydration') ? (
+            <HydrationStrategyView
+              onContactCoach={() => setActiveTab('contact')}
+            />
+          ) : (
+            <TacticalPaywallCard
+              feature="hydration"
+              currentTier={membership.tier}
+              onUpgradeToPro={() => setActiveTab('pricing')}
+              onNavigateToUnlocked={(tab) => setActiveTab(tab)}
+            />
+          )
         )}
 
         {activeTab === 'hub-runner' && (

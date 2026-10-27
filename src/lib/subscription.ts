@@ -119,12 +119,19 @@ export function getActiveMembership(driverId?: string): MembershipMetadata {
         const expiresTime = new Date(data.trialExpiresDate).getTime();
         const now = Date.now();
         if (now > expiresTime) {
-          // Trial expired
-          return {
+          // Trial expired: lock everything and save tier: 'none'
+          const expiredMeta: MembershipMetadata = {
             tier: 'none',
             trialStartDate: data.trialStartDate,
             trialExpiresDate: data.trialExpiresDate
           };
+          try {
+            localStorage.setItem(key, JSON.stringify(expiredMeta));
+            localStorage.setItem(SUBSCRIPTION_STORAGE_KEY, 'none');
+          } catch {
+            // ignore
+          }
+          return expiredMeta;
         }
       }
       return data;
@@ -133,11 +140,9 @@ export function getActiveMembership(driverId?: string): MembershipMetadata {
     console.warn('Error reading membership metadata:', e);
   }
 
-  // By default, grant new drivers the 14-day free trial so they can test everything right away
+  // By default, DO NOT automatically activate free trial. Visitors start with tier 'none'
   return {
-    tier: 'trial',
-    trialStartDate: new Date().toISOString(),
-    trialExpiresDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+    tier: 'none'
   };
 }
 
@@ -179,30 +184,32 @@ export function getTrialTimeRemaining(expiresDateStr?: string): {
   daysLeft: number;
   hoursLeft: number;
   isExpired: boolean;
+  hasActivated: boolean;
   displayText: string;
 } {
   if (!expiresDateStr) {
-    return { daysLeft: 14, hoursLeft: 0, isExpired: false, displayText: '14 days remaining' };
+    return { daysLeft: 0, hoursLeft: 0, isExpired: false, hasActivated: false, displayText: 'Trial Not Activated' };
   }
 
   const expiresTime = new Date(expiresDateStr).getTime();
   const diffMs = expiresTime - Date.now();
 
   if (diffMs <= 0) {
-    return { daysLeft: 0, hoursLeft: 0, isExpired: true, displayText: 'Trial Expired' };
+    return { daysLeft: 0, hoursLeft: 0, isExpired: true, hasActivated: true, displayText: 'Trial Expired' };
   }
 
   const daysLeft = Math.floor(diffMs / (1000 * 60 * 60 * 24));
   const hoursLeft = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
 
   if (daysLeft === 0) {
-    return { daysLeft: 0, hoursLeft, isExpired: false, displayText: `${hoursLeft} hours remaining` };
+    return { daysLeft: 0, hoursLeft, isExpired: false, hasActivated: true, displayText: `${hoursLeft} hours remaining` };
   }
 
   return {
     daysLeft,
     hoursLeft,
     isExpired: false,
+    hasActivated: true,
     displayText: `${daysLeft} day${daysLeft === 1 ? '' : 's'} remaining`
   };
 }
@@ -246,11 +253,8 @@ export function isFeatureUnlocked(
     return true; // In-cab / rest stop routines unlocked
   }
 
-  // 'none' (expired trial and not subscribed)
-  // Give basic preview access to rest stop and light db only
-  if (feature === 'rest-stop' || feature === 'light-db') {
-    return true;
-  }
+  // 'none' (trial not activated OR free trial has ended, and no active paid subscription)
+  // Per requirement: "Once the free trial ends direct them to get a subscription and lock everything again"
   return false;
 }
 

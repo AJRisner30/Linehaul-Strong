@@ -12,9 +12,12 @@ import {
   ArrowRight,
   ShieldCheck,
   Zap,
-  X
+  X,
+  Dumbbell,
+  MapPin,
+  Clock
 } from 'lucide-react';
-import { createDriverAccount, loginDriver, createGuestSession, resetDriverPassword } from '../lib/auth';
+import { createDriverAccount, loginDriver, resetDriverPassword } from '../lib/auth';
 import { DriverAccount } from '../types';
 
 interface DriverAuthModalProps {
@@ -75,7 +78,7 @@ export function DriverAuthModal({ isOpen, onSuccess, onClose, initialMode = 'sig
         });
 
         if (!res.success || !res.driver) {
-          setError(res.error || 'Failed to create account.');
+          setError(res.error || 'Failed to create driver account.');
           setIsSubmitting(false);
           return;
         }
@@ -84,7 +87,7 @@ export function DriverAuthModal({ isOpen, onSuccess, onClose, initialMode = 'sig
       } else {
         const res = await loginDriver(email, password);
         if (!res.success || !res.driver) {
-          setError(res.error || 'Failed to sign in.');
+          setError(res.error || 'Failed to sign in. Please check your email and password.');
           setIsSubmitting(false);
           return;
         }
@@ -98,33 +101,22 @@ export function DriverAuthModal({ isOpen, onSuccess, onClose, initialMode = 'sig
     }
   };
 
-  const handleGuestAccess = async () => {
-    setIsSubmitting(true);
-    try {
-      const guest = await createGuestSession();
-      onSuccess(guest);
-    } catch (err: any) {
-      setError('Failed to start guest session.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   return (
     <div className="fixed inset-0 z-50 bg-[#080A0E]/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-      <div className="w-full max-w-md bg-[#10141C] border-2 border-[#242E3F] rounded-2xl shadow-2xl overflow-hidden my-auto relative">
+      <div className="w-full max-w-lg bg-[#10141C] border-2 border-[#FF6B00]/60 rounded-3xl shadow-2xl overflow-hidden my-auto relative animate-in fade-in zoom-in-95 duration-200">
         {onClose && (
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-10 p-1.5 rounded-lg bg-[#141822] text-slate-400 hover:text-white border border-[#2B3547] transition"
+            className="absolute top-4 right-4 z-10 p-1.5 rounded-xl bg-[#141822] text-slate-400 hover:text-white border border-[#2B3547] transition hover:bg-[#1C2331]"
             title="Close"
           >
             <X className="w-4 h-4" />
           </button>
         )}
+
         {/* Top Header */}
         <div className="bg-gradient-to-r from-[#171E2B] via-[#121721] to-[#171E2B] border-b border-[#232B3B] p-5 sm:p-6 text-center">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-[#0C0F14] border-2 border-[#FF6B00] p-1.5 shadow-lg shadow-[#FF6B00]/20 flex items-center justify-center mb-3">
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-[#0C0F14] border-2 border-[#FF6B00] p-1.5 shadow-xl shadow-[#FF6B00]/25 flex items-center justify-center mb-3">
             <img
               src="/icon.svg"
               alt="Linehaul Strong"
@@ -133,17 +125,37 @@ export function DriverAuthModal({ isOpen, onSuccess, onClose, initialMode = 'sig
             />
           </div>
 
-          <h2 className="text-xl sm:text-2xl font-black uppercase text-white font-heading tracking-wider">
-            LINEHAUL <span className="text-[#FF6B00]">STRONG</span>
+          <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-500/60 text-[10px] font-tactical font-black text-emerald-400 uppercase tracking-widest mb-2 shadow">
+            <Zap className="w-3 h-3 fill-current" />
+            <span>{mode === 'signup' ? '14-DAY ALL-ACCESS FREE TRIAL' : 'DRIVER VAULT ACCESS'}</span>
+          </div>
+
+          <h2 className="text-xl sm:text-2xl font-black uppercase text-white font-heading tracking-wide">
+            {mode === 'signup' ? 'Activate 14-Day Free Trial' : 'Sign In to Driver Cab'}
           </h2>
-          <p className="text-xs text-slate-400 font-tactical uppercase tracking-wider mt-0.5">
-            Driver Authentication & Private Rig Vault
+          <p className="text-xs text-slate-300 font-tactical mt-1 max-w-md mx-auto">
+            {mode === 'signup'
+              ? 'Complete, unrestricted road test-drive of the Road Warrior commercial gym split, 53\' parking GPS, and rig protocols. No credit card required.'
+              : 'Sign in to access your saved workouts, telemetry logbook, and active membership subscription.'}
           </p>
 
-          <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/60 border border-emerald-600/40 text-[11px] font-tactical text-emerald-300">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Strict Zero Cross-Visibility • 100% Fresh Start</span>
-          </div>
+          {/* Trial Value Proposition Pills (Sign Up mode only) */}
+          {mode === 'signup' && (
+            <div className="grid grid-cols-2 gap-2 mt-4 text-left font-tactical">
+              <div className="bg-[#121722]/80 border border-[#20293A] rounded-xl p-2.5 flex items-start gap-2">
+                <Dumbbell className="w-4 h-4 text-[#FF6B00] shrink-0 mt-0.5" />
+                <span className="text-[11px] text-slate-200 leading-tight">
+                  <strong>Road Warrior Gym Split</strong> included for 14 days
+                </span>
+              </div>
+              <div className="bg-[#121722]/80 border border-[#20293A] rounded-xl p-2.5 flex items-start gap-2">
+                <MapPin className="w-4 h-4 text-[#FF6B00] shrink-0 mt-0.5" />
+                <span className="text-[11px] text-slate-200 leading-tight">
+                  <strong>Gyms & 53' Semi Parking GPS</strong> fully unlocked
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Tab Switcher */}
@@ -160,7 +172,7 @@ export function DriverAuthModal({ isOpen, onSuccess, onClose, initialMode = 'sig
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            Create Driver Account
+            Activate 14-Day Trial
           </button>
           <button
             type="button"
@@ -181,7 +193,7 @@ export function DriverAuthModal({ isOpen, onSuccess, onClose, initialMode = 'sig
         {/* Form Body */}
         <div className="p-5 sm:p-6 space-y-4">
           {error && (
-            <div className="p-3 rounded-xl bg-rose-950/50 border border-rose-600/60 text-rose-300 text-xs font-tactical flex items-start gap-2.5">
+            <div className="p-3 rounded-xl bg-rose-950/60 border border-rose-600/70 text-rose-200 text-xs font-tactical flex items-start gap-2.5">
               <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
@@ -209,7 +221,7 @@ export function DriverAuthModal({ isOpen, onSuccess, onClose, initialMode = 'sig
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="e.g. Jesse Miller"
-                      className="w-full pl-9 pr-3 py-2 text-xs bg-[#0C0F14] border border-[#263143] rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-[#FF6B00]"
+                      className="w-full pl-9 pr-3 py-2.5 text-xs bg-[#0C0F14] border border-[#263143] rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-[#FF6B00]"
                     />
                   </div>
                 </div>
@@ -241,7 +253,7 @@ export function DriverAuthModal({ isOpen, onSuccess, onClose, initialMode = 'sig
                         type="text"
                         value={carrier}
                         onChange={(e) => setCarrier(e.target.value)}
-                        placeholder="e.g. Owner-Op, Prime"
+                        placeholder="e.g. Knight-Swift / Owner-Op"
                         className="w-full pl-9 pr-3 py-2 text-xs bg-[#0C0F14] border border-[#263143] rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-[#FF6B00]"
                       />
                     </div>
@@ -252,7 +264,7 @@ export function DriverAuthModal({ isOpen, onSuccess, onClose, initialMode = 'sig
 
             <div>
               <label className="block text-[11px] font-tactical text-slate-300 uppercase tracking-wider mb-1">
-                Email Address or Driver ID *
+                Driver Email Address *
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -262,7 +274,7 @@ export function DriverAuthModal({ isOpen, onSuccess, onClose, initialMode = 'sig
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="driver@linehaul.com"
-                  className="w-full pl-9 pr-3 py-2 text-xs bg-[#0C0F14] border border-[#263143] rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-[#FF6B00]"
+                  className="w-full pl-9 pr-3 py-2.5 text-xs bg-[#0C0F14] border border-[#263143] rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-[#FF6B00]"
                 />
               </div>
             </div>
@@ -270,13 +282,13 @@ export function DriverAuthModal({ isOpen, onSuccess, onClose, initialMode = 'sig
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="block text-[11px] font-tactical text-slate-300 uppercase tracking-wider">
-                  Password *
+                  Password * (Min 6 Characters)
                 </label>
                 {mode === 'signin' && (
                   <button
                     type="button"
                     onClick={handleForgotPassword}
-                    className="text-[11px] font-tactical text-[#FF6B00] hover:underline"
+                    className="text-[10px] font-tactical text-[#FF6B00] hover:underline"
                   >
                     Forgot Password?
                   </button>
@@ -290,7 +302,7 @@ export function DriverAuthModal({ isOpen, onSuccess, onClose, initialMode = 'sig
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-9 pr-9 py-2 text-xs bg-[#0C0F14] border border-[#263143] rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-[#FF6B00]"
+                  className="w-full pl-9 pr-9 py-2.5 text-xs bg-[#0C0F14] border border-[#263143] rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-[#FF6B00]"
                 />
                 <button
                   type="button"
@@ -305,33 +317,37 @@ export function DriverAuthModal({ isOpen, onSuccess, onClose, initialMode = 'sig
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-3 mt-2 rounded-xl bg-[#FF6B00] hover:bg-[#E05E00] text-[#0D0F12] font-tactical font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-[#FF6B00]/20 transition"
+              className="w-full py-3.5 mt-2 rounded-xl bg-gradient-to-r from-[#FF6B00] via-[#FF7E1F] to-[#FF6B00] hover:from-[#FF7E1F] hover:to-[#FF6B00] text-[#0A0D12] font-tactical font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-xl shadow-[#FF6B00]/30 transition active:scale-[0.98]"
             >
-              <span>{mode === 'signup' ? 'Create Account & Start Fresh' : 'Sign In to My Cab'}</span>
-              <ArrowRight className="w-4 h-4 stroke-[3]" />
+              {isSubmitting ? (
+                <span>Processing...</span>
+              ) : mode === 'signup' ? (
+                <>
+                  <Zap className="w-4 h-4 fill-current" />
+                  <span>Activate 14-Day Free Trial & Start</span>
+                  <ArrowRight className="w-4 h-4 stroke-[3]" />
+                </>
+              ) : (
+                <>
+                  <Lock className="w-4 h-4 stroke-[2.5]" />
+                  <span>Sign In to My Cab</span>
+                  <ArrowRight className="w-4 h-4 stroke-[3]" />
+                </>
+              )}
             </button>
           </form>
 
-          {/* Privacy & Fresh Slate Guarantee Notice */}
-          <div className="p-3 rounded-xl bg-[#141922] border border-[#202736] space-y-1.5 text-[11px] text-slate-400 font-tactical">
-            <p className="flex items-center gap-1.5 text-slate-300 font-bold">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Independent Driver Vault</span>
+          {/* Privacy & Zero Obligation Notice */}
+          <div className="p-3 rounded-xl bg-[#141922] border border-[#202736] space-y-1 text-[11px] text-slate-400 font-tactical">
+            <p className="flex items-center gap-1.5 text-emerald-400 font-bold">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span>100% Free • Zero Credit Card • Private Isolated Vault</span>
             </p>
-            <p>
-              When you create an account, your app starts completely fresh with 0 workout logs. Other drivers cannot see your account, email, or training logs.
+            <p className="text-slate-300">
+              {mode === 'signup'
+                ? 'Your 14-day free trial gives you full access to all road workouts and gym GPS. At the end of the trial, you can choose to subscribe ($15 Starter or $30 Pro) or let it expire.'
+                : 'Your profile, custom routines, and workout telemetry are securely stored in your isolated driver vault.'}
             </p>
-          </div>
-
-          {/* Quick Access Options */}
-          <div className="pt-2 flex flex-col gap-2 text-center">
-            <button
-              type="button"
-              onClick={handleGuestAccess}
-              className="text-xs font-tactical text-slate-400 hover:text-[#FF6B00] underline transition py-1"
-            >
-              Or Quick Test-Drive as Guest Driver (Clean Workspace)
-            </button>
           </div>
         </div>
       </div>

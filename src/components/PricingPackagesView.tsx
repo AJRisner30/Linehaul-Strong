@@ -283,10 +283,17 @@ export const PricingPackagesView: React.FC<PricingPackagesViewProps> = ({
                 </span>
               )}
               {currentMembership.tier === 'none' && (
-                <span className="text-rose-400 font-black uppercase flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5" />
-                  Trial Expired • Select a Plan Below
-                </span>
+                trialInfo.hasActivated ? (
+                  <span className="text-rose-400 font-black uppercase flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    14-Day Trial Ended • Subscription Required Below
+                  </span>
+                ) : (
+                  <span className="text-emerald-400 font-black uppercase flex items-center gap-1">
+                    <Zap className="w-3.5 h-3.5" />
+                    14-Day Free Trial Available • Activate Below
+                  </span>
+                )
               )}
             </div>
 
@@ -494,14 +501,24 @@ export const PricingPackagesView: React.FC<PricingPackagesViewProps> = ({
                         <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                         <span>Trial Active ({trialInfo.displayText}) • Test Drive →</span>
                       </button>
+                    ) : trialInfo.hasActivated && trialInfo.isExpired ? (
+                      <div className="space-y-1.5 w-full text-center">
+                        <div className="w-full py-3 px-3 rounded-xl bg-rose-950/40 border border-rose-700/60 text-rose-300 text-xs font-tactical font-black uppercase tracking-wider flex items-center justify-center gap-1.5">
+                          <Lock className="w-3.5 h-3.5" />
+                          <span>14-Day Trial Concluded</span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 font-tactical">
+                          Select $15 Starter or $30 Pro below
+                        </p>
+                      </div>
                     ) : (
                       <button
-                        onClick={handleActivateTrial}
+                        onClick={currentDriver ? handleActivateTrial : onOpenAuth}
                         disabled={isProcessing}
                         className="w-full py-3 px-4 rounded-xl text-xs font-tactical font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 bg-[#FF6B00] hover:bg-[#FF8526] text-[#0A0D12] shadow-lg shadow-[#FF6B00]/25 cursor-pointer font-black"
                       >
                         <Zap className="w-4 h-4 fill-current" />
-                        <span>Start 14-Day Free Trial</span>
+                        <span>Start 14-Day Free Trial ($0)</span>
                       </button>
                     )}
                   </div>

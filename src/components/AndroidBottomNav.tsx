@@ -44,6 +44,7 @@ export const AndroidBottomNav: React.FC<AndroidBottomNavProps> = ({
   activeTab,
   onTabChange,
   currentDriver,
+  currentMembership,
   completedWorkoutsCount,
   onOpenAndroidHub,
   onOpenAuth,
@@ -338,12 +339,16 @@ export const AndroidBottomNav: React.FC<AndroidBottomNavProps> = ({
                   className={`w-full flex items-center justify-between p-3 rounded-xl border transition ${
                     activeTab === 'pricing'
                       ? 'bg-[#FF6B00]/15 border-[#FF6B00] text-white'
+                      : currentMembership?.tier === 'none'
+                      ? 'bg-rose-950/40 border-rose-600/60 text-rose-300 hover:text-white'
                       : 'bg-[#131923] border-[#1E2838] text-emerald-400 hover:text-white'
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <Tag className="w-4 h-4 text-emerald-400" />
-                    <span className="font-bold uppercase">Packages & Pricing ($15 / $30)</span>
+                    <span className="font-bold uppercase">
+                      {currentMembership?.tier === 'none' ? 'Packages & Subscriptions (Trial Ended)' : 'Packages & Pricing ($15 / $30)'}
+                    </span>
                   </div>
                   <ChevronRight className="w-4 h-4 text-slate-500" />
                 </button>
